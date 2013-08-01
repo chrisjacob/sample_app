@@ -8,7 +8,7 @@ development:
   host: localhost
   min_messages: WARNING
 
-test:
+test: &test
   adapter: postgresql
   encoding: unicode
   database: sample_app_test
@@ -17,3 +17,5 @@ test:
   password:
   host: localhost
   min_messages: WARNING
+cucumber:
+  <<: *test
