@@ -32,6 +32,59 @@ describe "Static pages" do
 					expect(page).to have_selector("li#micropost-#{item.id}", text: item.content)
 				end
 			end
+
+			describe "micropost count pluralization" do
+
+				it "should have 2 microposts" do
+					user.microposts.count == 2
+				end
+
+				it "should be plural" do
+					expect(page).to have_content("2 microposts")
+				end
+
+				describe "made sigular" do
+					before do 
+						user.feed.last.destroy
+						visit root_path
+					end
+
+					it "should be singular" do
+						expect(page).to have_content("1 micropost")
+					end
+
+					describe "made zero" do
+						before do 
+							user.feed.last.destroy
+							visit root_path
+						end
+
+						it "should be plural" do
+							expect(page).to have_content("0 microposts")
+						end
+					end
+				end
+			end
+
+			describe "pagination" do
+
+				before do
+					30.times.collect do |i| 
+						FactoryGirl.create(:micropost, user: user, content: "Lorem ipsum #{i}")
+					end
+					visit root_path
+				end
+				after { Micropost.delete_all }
+				
+				it { should have_selector('div.pagination') }
+
+				it "should list each micropost" do
+					user.feed.paginate(page: 1).each do |micropost|
+						expect(page).to have_selector('li', text: micropost.content)
+					end
+				end
+			end
+
 		end
 	end
 

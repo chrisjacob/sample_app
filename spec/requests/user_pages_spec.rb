@@ -87,6 +87,78 @@ describe "User pages" do
 			it { should have_content(m2.content) }
 			it { should have_content(user.microposts.count) }
 		end
+
+		describe "delete links" do
+
+			it { should_not have_link('delete') }
+
+			describe "as the user who posted the micropost" do
+
+				before do
+					sign_in user
+					visit user_path(user)
+				end
+
+				it { should have_link('delete', href: micropost_path(m1)) }
+
+				it "should be able to delete own microposts" do
+					expect do
+						click_link('delete', match: :first)
+					end.to change(Micropost, :count).by(-1)
+				end
+
+				describe "submitting a DELETE request to the Microposts#destroy action" do
+					let(:m1_user_path) { user_path(m1.user) }
+					before do
+						sign_in user, no_capybara: true
+						delete micropost_path(m1)
+					end
+					specify { expect(response).to redirect_to(m1_user_path) }
+				end
+			end
+
+			describe "as an admin user" do
+				let(:admin) { FactoryGirl.create(:admin) }
+
+				before do
+					sign_in admin
+					visit user_path(user)
+				end
+
+				it { should have_link('delete', href: micropost_path(m1)) }
+
+				it "should be able to delete other users microposts" do
+					expect do
+						click_link('delete', match: :first)
+					end.to change(Micropost, :count).by(-1)
+				end
+
+				describe "submitting a DELETE request to the Microposts#destroy action" do
+					let(:m1_user_path) { user_path(m1.user) }
+					before do 
+						sign_in admin, no_capybara: true
+						delete micropost_path(m1)
+					end
+					specify { expect(response).to redirect_to(m1_user_path) }
+				end
+			end
+
+			describe "as non-admin user" do
+				let(:not_admin) { FactoryGirl.create(:user) }
+
+				before do
+					sign_in not_admin, no_capybara: true
+					visit user_path(user)
+				end
+
+				it { should_not have_link('delete', href: micropost_path(m1)) }
+
+				describe "submitting a DELETE request to the Microposts#destroy action" do
+					before { delete micropost_path(m1) }
+					specify { expect(response).to redirect_to(root_url) }
+				end
+			end
+		end
 	end
 
 	describe "signup page" do
